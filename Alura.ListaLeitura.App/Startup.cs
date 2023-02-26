@@ -1,6 +1,8 @@
 ﻿using Alura.ListaLeitura.App.Repositorio;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Alura.ListaLeitura.App
@@ -17,33 +19,28 @@ namespace Alura.ListaLeitura.App
 
         public Task Roteamento(HttpContext context)
         {
+            IDictionary<String, RequestDelegate> rotas = new Dictionary<String, RequestDelegate>();
             var path = context.Request.Path;
-            if (path == "/Livros/ParaLer")
+
+            rotas.Add("/livros/paraler", LivrosParaLer);
+            rotas.Add("/livros/lendo", LivrosLendo);
+            rotas.Add("/livros/lidos", LivrosLidos);
+            rotas.Add("/", WelcomeMessage);
+
+            if (rotas.ContainsKey(path))
             {
-                return LivrosParaLer(context);
+                var metodo = rotas[path];
+                return metodo.Invoke(context);
             }
 
-            else if (path == "/Livros/Lendo")
-            {
-                return LivrosLendo(context);
-            }
-
-            else if (path == "/Livros/Lidos")
-            {
-                return LivrosLidos(context);
-            }
-            else if (path == "/")
-            {
-                return WelcomeMessage(context);
-            }
-
-            return Padrao(context);
+            //return context.Response.WriteAsync(rotas.);
+            return Error(context);
 
         }
 
-        public Task Padrao(HttpContext context)
+        public Task Error(HttpContext context)
         {
-            context.Response.StatusCode =404;
+            context.Response.StatusCode = 404;
             return context.Response.WriteAsync("Caminho Inexistente");
         }
 
@@ -63,15 +60,15 @@ namespace Alura.ListaLeitura.App
         public Task LivrosLidos(HttpContext context)
         {
             LivroRepositorioCSV _repo = new LivroRepositorioCSV();
-            return context.Response.WriteAsync(_repo.Lidos.ToString());
+            return  context.Response.WriteAsync(_repo.Lidos.ToString());
         }
 
-        public async Task WelcomeMessage(HttpContext context)
+        public Task WelcomeMessage(HttpContext context)
         {
             context.Response.ContentType = "text/html; charset=utf-8";
-            await context.Response.WriteAsync("<html><head><title>Bem-vindo</title></head><body>");
-            await context.Response.WriteAsync("<h2 style=\"font-family: Verdana;\">Bem vindo ao nosso site</h2>");
-            await context.Response.WriteAsync("</body></html>");
+            context.Response.WriteAsync("<html><head><title>Bem-vindo</title></head><body>");
+            context.Response.WriteAsync("<h2 style=\"font-family: Verdana;\">Bem vindo ao nosso site</h2>");
+            return context.Response.WriteAsync("</body></html>");
         }
 
 
